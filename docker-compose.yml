@@ -1,0 +1,40 @@
+version: "3.3"
+
+volumes:
+  postgres_data:
+
+networks:
+  roulette:
+    name: roulette
+    driver: bridge
+
+services:
+
+  db:
+    image: postgres:14.3
+    container_name: db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - ./.env
+    networks:
+      - roulette
+
+  web:
+    container_name: web
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    command: uwsgi --socket 0.0.0.0:8000 --protocol=http -w wsgi:app
+    env_file:
+      - ./.env
+    networks:
+      - roulette
